@@ -10,14 +10,15 @@ from car import Car
 class Canvas(Window):
     frame_duration = 1/60
 
-    def __init__(self, track_image_path, car_image_paths):
+    def __init__(self, track, car_image_paths):
         super().__init__()
+        self.track = track
     self.is_simulating = True
     self.width =960
     self.height =540
     self.background_batch = Batch()
     self.cars_batch =Batch()
-    self.track_image_sprite = Sprite(image.load(track_image_path), batch=self.background_batch)
+    self.track_image_sprite = Sprite(track.track_image, batch=self.background_batch)
     self.keyboard = key.keyStateHandler() # TODO: Remove Keyboard Control
     self.push_handlers(self.keyboard) # TODO: remove keyboard control
 
@@ -35,7 +36,11 @@ class Canvas(Window):
                 self.draw()
 
     def update(self, delta_time):
-        pass
+        for car_sprite in self.car_sprites:
+            car_sprite.update(delta_time, self.keyboard) # TODO: remove keyboard control
+            if car_sprite.is_running:
+                if not self.track.is_road(car_sprite.body.x, car_sprite.body.y):
+                    car_sprite.shut_off()
     def draw(self):
         self.clear()
         self.background_batch.draw()
