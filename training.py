@@ -1,5 +1,6 @@
 from canvas import Canvas
 from racetrack import Track
+from network import FirstNetwork
 import os
 
 
@@ -11,4 +12,8 @@ canvas = Canvas(Track(), car_image_paths)
 
 canvas =Canvas(track_image_path, car_image_paths)
 
-canvas.simulate_generation()
+population_count =3 
+networks = [FirstNetwork() for _ in range(population_count)]
+
+simulation_round =1
+canvas.simulate_generation(networks, simulation_round)
