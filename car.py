@@ -1,28 +1,43 @@
 from pyglet.sprite import Sprite
 import math
+from pyglet.shapes import Line
+
+class Radar:
+    max_length_pixels = 200
+
+
+    def __init__(self, angle, batch):
+        self.angle = angle
+        self.beam = Line(0,0,0,0, width=2, color=(255, 255, 255, 127), batch=batch)
+
 
 
 class Car:
 
     max_speed = 6.0
     
-    def __init__(self, network,  image, batch):
+    def __init__(self, network, track,  image, batch):
         self.network =network
+        self.track = track
         image.anchor_x =25
         image.anchor_y =25
     self.body =Sprite(image, batch=batch)
-    self.body.x, self.body.y =480, 260
+
+    self.body.x, self.body.y = track.checkpoints[0]
+    self.radars = Radar(-70, batch),Radar(-35, batch),Radar(0, batch),Radar(35, batch),Radar(70, batch) 
     self.speed = 0.0
     self.rotation =0.0
     self.is_running =True
+    self.last_checkpoint_passed =0
 
 
     def update(self, delta_time):
         render_speed = delta_time * 60
         self.speed-= 0.5 # friction
         if self.is_running:
-            acceleration, steer_position = self.network.feed_forward()
-            
+            measurements = [self.probe(radar) / radar.max_length_pixels for radar in self.radars]
+            acceleration, steer_position = self.network.feed_forward(measurements)
+
             acceleration =0.0
             steer_position =0.0
           
@@ -45,13 +60,40 @@ class Car:
 
                     if self.speed < 0:
                      self.speed =0.0
+                     self.shut_off()
 
 
                     self.body.rotation = -self.rotation
                     self.body.x += self.speed * render_speed * math.cos(math.radians(self.rotation))
                     self.body.x += self.speed * render_speed * math.sin(math.radians(self.rotation))
 
+                    def probe(self, radar):
+                        probe_length = 0
+                        radar.beam.x =self.body.x
+                        radar.beam.y =self.body.y
+                        x2 = radar.beam.x
+                        y2 = radar.beam.y
+
+                        while probe_length < radar.max_length_pixels and self.track.is_road(x2, y2):
+                            probe_length += 2 # pixels
+                        
+                        x2 = self.body.x + probe_length * math.cos(math.radians(self.rotation + radar.angle))
+                        y2 = self.body.x + probe_length * math.sin(math.radians(self.rotation + radar.angle))
+
+
+                        radar.beam.x2 = x2
+                        radar.beam.y2 = y2
+                        return probe_length
+
+                        def hit_checpoint(self, id):
+                        
+                            if id -self.last_checkpoint_passed ==1:
+                                self.last_checkpoint_passed =id
+                        if id < self.last_checkpoint_passed:  # driving in the wrong direction or finish
+                                self.shut_off()
+
                     def shut_off(self):
                         self.is_running = False
+                        self.radar = None
 
         self.body.x += self.speed
