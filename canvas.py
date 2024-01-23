@@ -32,7 +32,7 @@ class Canvas(Window):
         anchor_y="center", color=(255, 255, 255), batch=self.background_batch)))
     
     def simulate_generation(self, networks, simulation_round):
-        self.hud =Hud(simulation_round, self.overlay_batch)
+        self.hud =Hud(simulation_round, networks[0].dimensions, self.overlay_batch)
         self.car_sprite =[]
         for netwwork in networks:
             self.car_sprites.append(Car(network, self.track, random.choice(self.car_images), self.cars_batch))
@@ -49,6 +49,12 @@ class Canvas(Window):
                 self.update(elapsed_time)
                 self.draw()
 
+                for car in self.car_sprites:
+                    car.network.highest_checkpoint = car.last_checkpoint_passed
+                    car.network.smallest_edge_distance = car.smallest_edge_distance
+                    if car.last_checkpoint_passed == len(self.checkpoiny_sprites) - 1:
+                        car.network.has_reached_goal = True
+
     def update(self, delta_time):
         for car_sprite in self.car_sprites:
             car_sprite.update(delta_time) 
@@ -60,7 +66,7 @@ class Canvas(Window):
                     running_cars =[c for c in self.car_sprites if c.is_running]
                     self.population_alive = len(running_cars)
                     if self.population_alive > 0:
-                        self.hud.update(self.population_alive, self.population_total, running_cars[0].speed)
+                        self.hud.update(running_cars[0].networks,self.population_alive, self.population_total, running_cars[0].speed )
 
     def draw(self):
         self.clear()

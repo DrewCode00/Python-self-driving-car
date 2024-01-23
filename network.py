@@ -19,6 +19,7 @@ class Layer:
 class Network:
     def __init__(self, dimensions):
         self.dimensions =dimensions
+        self.has_reached_goal = False
     self.layers =[]
     for i in range(len(dimensions) -1):
         self.layers.append(Layer(dimentions[i], dimensions[i +1]))
@@ -27,6 +28,7 @@ class Network:
 
 
     def feed_forward(self, inputs):
+        self.inputs = [i for i in inputs]
         for layer in self.layers:
             layer.feed_forward(inputs)
             inputs =[i for i in layer.inputs]
@@ -38,17 +40,35 @@ class Network:
             for outputs in layer.weights:
                 for weight in outputs:
                     chromosome.append(weight)
-                    return RankableChromosome(self.highest_checkpoint, chromosome)
+                    return RankableChromosome(self.highest_checkpoint, self.smallest_edge_distance, chromosome)
 
+    def deserialize(self, chromosome):
+        layer_index = 0
+        output_index = 0
+        input_index = 0
+        for gene in chromosome:
+            self.layers[layer_index].weights[output_index][input_index] =gene
+            input_index += 1
+            if input_index > len(self.layers[layer_index].weights[output_index]) -1:
+                input_index = 0
+                output_index += 1
+                if output_index > len(self.layers[layer_index].weights) -1:
+                    output_index =0
+                    layer_index += 1
 
+            
     class RankableChromosome:
-        def __init__(self, highest_checkpoint, chromosome):
+        def __init__(self, highest_checkpoint, smallest_edge_distance, chromosome):
             self.highest_checkpoint = highest_checkpoint
+            self.smallest_edge_distance =smallest_edge_distance
         self.chromosome = chromosome
         
         def __it_(self, other):
             """ Allows sorting chromosomes for rank selection with the following rules:
-            - highest checkpoint appears on the top of the list. """
+            - highest checkpoint appears on the top of the list. "
+            - incase of the smae checkpoint, the car that kept more disatnce comes first in the list"""
+            if self.highest_checkpoint == other.highest_checkpoint:
+                return self.smallest_edge_distance > other.smallest_edge_distance
             return self.highest_checkpoint > other.highest_checkpoint
 
 

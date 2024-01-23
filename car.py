@@ -1,6 +1,10 @@
 from pyglet.sprite import Sprite
 import math
 from pyglet.shapes import Line
+from racetrack import Track
+from network import Network
+from evolution import Evolution
+import os
 
 class Radar:
     max_length_pixels = 200
@@ -15,6 +19,7 @@ class Radar:
 class Car:
 
     max_speed = 6.0
+    slipping_speed = max_speed * 0.75
     
     def __init__(self, network, track,  image, batch):
         self.network =network
@@ -29,6 +34,7 @@ class Car:
     self.rotation =0.0
     self.is_running =True
     self.last_checkpoint_passed =0
+    self.smallest_edge_distance = 100
 
 
     def update(self, delta_time):
@@ -50,9 +56,15 @@ class Car:
 
             if self.speed > self.max_speed:
                     self.speed = self.max_speed
-                    self.rotation -= steer_position *self.speed * render_speed
+
+                    if self.speed > self.slipping_speed:
+                        steer_impact = -self.speed / self.max_speed + self.slipping_speed / self.max_speed + 1
+
+            else: 
+                            steer_impact = 1
+            self.rotation -= steer_position *self.speed * self.speed * steer_impact * render_speed * 3
                     
-            else: #engine is off
+        else: #engine is off
                     self.speed -= 0.05 * self.speed
 
 
@@ -83,6 +95,8 @@ class Car:
 
                         radar.beam.x2 = x2
                         radar.beam.y2 = y2
+                        if probe_length < self.smallest_edge_distance:
+                            self.smallest_edge_distance = probe_length
                         return probe_length
 
                         def hit_checpoint(self, id):
